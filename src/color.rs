@@ -1,9 +1,9 @@
 use rand::{self, Rng};
 
-pub const SAND: [f32; 4] = [0.7, 0.6, 0.4, 1.0];
-pub const CLAY: [f32; 4] = [0.2, 0.2, 0.2, 1.0];
-pub const WATER: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
-pub const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+pub const SAND_COLOR: [f32; 4] = [0.7, 0.6, 0.4, 1.0];
+pub const CLAY_COLOR: [f32; 4] = [0.2, 0.2, 0.2, 1.0];
+pub const WATER_COLOR: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
+pub const WHITE_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 
 pub fn random_color(base_color: [f32; 4]) -> [f32; 4] {
     let mut rng = rand::rng();

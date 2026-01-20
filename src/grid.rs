@@ -1,4 +1,4 @@
-use crate::cell::Cell;
+use crate::cell::{Cell, EMPTY_CELL, SAND_CELL, WATER_CELL};
 use rand;
 use rand::seq::SliceRandom;
 
@@ -33,7 +33,7 @@ impl Grid {
         grid
     }
 
-    pub fn place_element(&mut self, x: i8, y: i8, selected_element: u8) {
+    pub fn place_element(&mut self, x: i32, y: i32, selected_element: u8) {
         let positions = self.get_circle_positions(x as i32, y as i32, 3);
 
         for (xp, yp) in positions {
@@ -92,9 +92,8 @@ impl Grid {
                 }
                 let cell_type = self.grid[y as usize][x as usize].cell_type;
                 match cell_type {
-                    1 => self.update_sand(x, y),
-                    3 => self.update_water(x, y),
-                    // 2 => self.update_fire(x, y),
+                    SAND_CELL => self.update_sand(x, y),
+                    WATER_CELL => self.update_water(x, y),
                     _ => {}
                 }
             }
@@ -110,18 +109,45 @@ impl Grid {
             if tx < 0 || ty < 0 {
                 continue;
             }
-            if self
+            match self
                 .grid
                 .get(ty as usize)
                 .and_then(|row| row.get(tx as usize))
                 .map(|cell| cell.cell_type)
-                == Some(0)
             {
-                self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                self.grid[y as usize][x as usize] = Cell::new_empty();
-                self.processed[ty as usize][tx as usize] = true;
-                return;
+                Some(EMPTY_CELL) => {
+                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+                    self.grid[y as usize][x as usize] = Cell::new_empty();
+                    self.processed[ty as usize][tx as usize] = true;
+                    // return;
+                }
+                Some(WATER_CELL) => {
+                    let cell_buffer = self.grid[ty as usize][tx as usize];
+                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+                    self.grid[y as usize][x as usize] = cell_buffer;
+                }
+
+                _ => {}
             }
+            // if self
+            //     .grid
+            //     .get(ty as usize)
+            //     .and_then(|row| row.get(tx as usize))
+            //     .map(|cell| cell.cell_type)
+            //     == Some(0)
+            // {
+            //     self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+            //     self.grid[y as usize][x as usize] = Cell::new_empty();
+            //     self.processed[ty as usize][tx as usize] = true;
+            //     return;
+            // } else if self
+            //     .grid
+            //     .get(ty as usize)
+            //     .and_then(|row| row.get(tx as usize))
+            //     .map(|cell| cell.cell_type)
+            //     == Some(0)
+            // {
+            // }
         }
     }
 

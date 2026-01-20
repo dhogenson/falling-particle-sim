@@ -1,5 +1,10 @@
 use crate::color::*;
 
+pub const EMPTY_CELL: u8 = 0;
+pub const SAND_CELL: u8 = 1;
+pub const CLAY_CELL: u8 = 2;
+pub const WATER_CELL: u8 = 3;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Cell {
     pub cell_color: [f32; 4],
@@ -9,29 +14,29 @@ pub struct Cell {
 impl Cell {
     pub fn new_empty() -> Self {
         Self {
-            cell_color: WHITE,
-            cell_type: 0,
+            cell_color: WHITE_COLOR,
+            cell_type: EMPTY_CELL,
         }
     }
 
     pub fn new_sand() -> Self {
         Self {
-            cell_color: random_color(SAND),
-            cell_type: 1,
+            cell_color: random_color(SAND_COLOR),
+            cell_type: SAND_CELL,
         }
     }
 
     pub fn new_clay() -> Self {
         Self {
-            cell_color: random_color(CLAY),
-            cell_type: 2,
+            cell_color: random_color(CLAY_COLOR),
+            cell_type: CLAY_CELL,
         }
     }
 
     pub fn new_water() -> Self {
         Self {
-            cell_color: random_color(WATER),
-            cell_type: 3,
+            cell_color: random_color(WATER_COLOR),
+            cell_type: WATER_CELL,
         }
     }
 }

@@ -17,9 +17,9 @@ use piston_window::{
 use piston_window::*;
 
 fn main() {
-    const CELL_SIZE: f64 = 10.0;
-    const GRID_WIDTH: u32 = 100;
-    const GRID_HEIGHT: u32 = 100;
+    const CELL_SIZE: f64 = 5.0;
+    const GRID_WIDTH: u32 = 200;
+    const GRID_HEIGHT: u32 = 200;
     const _FPS: u16 = 60;
 
     let window_width: u32 = (GRID_WIDTH as f64 * CELL_SIZE) as u32;
@@ -36,8 +36,8 @@ fn main() {
 
     let mut grid = Grid::new(GRID_WIDTH, GRID_HEIGHT);
 
-    let mut board_x: i8 = 0;
-    let mut board_y: i8 = 0;
+    let mut board_x: i32 = 0;
+    let mut board_y: i32 = 0;
     let mut mouse_held = false;
 
     let update_interval = Duration::from_millis(5);
@@ -68,8 +68,8 @@ fn main() {
             let mouse_x: f64 = cursor_pos[0];
             let mouse_y: f64 = cursor_pos[1];
 
-            board_x = (mouse_x / CELL_SIZE) as i8;
-            board_y = (mouse_y / CELL_SIZE) as i8;
+            board_x = (mouse_x / CELL_SIZE) as i32;
+            board_y = (mouse_y / CELL_SIZE) as i32;
         }
 
         if let Some(Button::Mouse(MouseButton::Left)) = event.press_args() {
@@ -83,9 +83,9 @@ fn main() {
         // Place element
         if mouse_held
             && board_x >= 0
-            && board_x < GRID_WIDTH as i8
+            && board_x < GRID_WIDTH as i32
             && board_y >= 0
-            && board_y < GRID_HEIGHT as i8
+            && board_y < GRID_HEIGHT as i32
         {
             grid.place_element(board_x, board_y, selected_element);
         }
@@ -98,7 +98,7 @@ fn main() {
 
         // Draw grid
         window.draw_2d(&event, |context, graphics, _device| {
-            clear(WHITE, graphics);
+            clear(WHITE_COLOR, graphics);
             draw_grid(&grid, CELL_SIZE, &context, graphics);
         });
 
