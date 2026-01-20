@@ -98,7 +98,7 @@ fn main() {
 
         // Draw grid
         window.draw_2d(&event, |context, graphics, _device| {
-            clear(WHITE_COLOR, graphics);
+            clear(LIGHT_BLUE, graphics);
             draw_grid(&grid, CELL_SIZE, &context, graphics);
         });
 
