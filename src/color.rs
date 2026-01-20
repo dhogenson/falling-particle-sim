@@ -2,10 +2,11 @@ use rand::{self, Rng};
 
 pub const SAND_COLOR: [f32; 4] = [0.7, 0.6, 0.4, 1.0];
 pub const CLAY_COLOR: [f32; 4] = [0.2, 0.2, 0.2, 1.0];
-pub const WATER_COLOR: [f32; 4] = [0.0, 0.0, 1.0, 0.7];
+pub const WATER_COLOR: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
 pub const WHITE_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 pub const WET_SAND_COLOR: [f32; 4] = [0.49, 0.34, 0.08, 1.0];
-pub const LIGHT_BLUE: [f32; 4] = [0.35, 0.68, 0.9, 1.0];
+pub const LIGHT_BLUE_COLOR: [f32; 4] = [0.35, 0.68, 0.9, 1.0];
+pub const TRANSPAERNT_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
 
 pub fn random_color(base_color: [f32; 4]) -> [f32; 4] {
     let mut rng = rand::rng();

@@ -17,9 +17,9 @@ use piston_window::{
 use piston_window::*;
 
 fn main() {
-    const CELL_SIZE: f64 = 5.0;
-    const GRID_WIDTH: u32 = 200;
-    const GRID_HEIGHT: u32 = 200;
+    const CELL_SIZE: f64 = 10.0;
+    const GRID_WIDTH: u32 = 80;
+    const GRID_HEIGHT: u32 = 80;
     const _FPS: u16 = 60;
 
     let window_width: u32 = (GRID_WIDTH as f64 * CELL_SIZE) as u32;
@@ -98,8 +98,16 @@ fn main() {
 
         // Draw grid
         window.draw_2d(&event, |context, graphics, _device| {
-            clear(LIGHT_BLUE, graphics);
-            draw_grid(&grid, CELL_SIZE, &context, graphics);
+            clear(LIGHT_BLUE_COLOR, graphics);
+            draw_grid(
+                &grid,
+                CELL_SIZE,
+                board_x,
+                board_y,
+                selected_element,
+                &context,
+                graphics,
+            );
         });
 
         // Update FPS counter
@@ -114,7 +122,17 @@ fn main() {
     }
 }
 
-fn draw_grid<G: Graphics>(grid: &Grid, cell_size: f64, context: &Context, graphics: &mut G) {
+fn draw_grid<G: Graphics>(
+    grid: &Grid,
+    cell_size: f64,
+    board_x: i32,
+    board_y: i32,
+    selected_element: u8,
+    context: &Context,
+    graphics: &mut G,
+) {
+    let mouse_hover = grid.get_circle_positions(board_x, board_y, 2);
+
     // Draw simple grid
     for y in 0..grid.height {
         for x in 0..grid.width {
@@ -132,5 +150,21 @@ fn draw_grid<G: Graphics>(grid: &Grid, cell_size: f64, context: &Context, graphi
 
             rectangle(color, cell_rect, context.transform, graphics);
         }
+    }
+
+    // Draw mouse hover
+    for (x, y) in mouse_hover {
+        let x_pos = x as f64 * cell_size;
+        let y_pos = y as f64 * cell_size;
+        let cell_rect: [f64; 4] = [x_pos, y_pos, cell_size, cell_size];
+
+        let color: [f32; 4] = match selected_element {
+            1 => SAND_COLOR,
+            2 => CLAY_COLOR,
+            3 => WATER_COLOR,
+            _ => TRANSPAERNT_COLOR,
+        };
+
+        rectangle(color, cell_rect, context.transform, graphics);
     }
 }
