@@ -1,20 +1,20 @@
 mod cell;
 mod color;
 mod grid;
+mod ui;
 
 use std::time::{Duration, Instant};
 
 use color::*;
 use grid::Grid;
 
-use std::io::{self, Write};
-
 use piston_window::{
     PistonWindow, WindowSettings,
-    graphics::{Context, Graphics, clear, rectangle},
+    graphics::{Context, Graphics, Transformed, clear, rectangle, text},
 };
 
 use piston_window::*;
+use wgpu_graphics::TextureSettings;
 
 fn main() {
     const CELL_SIZE: f64 = 10.0;
@@ -22,8 +22,10 @@ fn main() {
     const GRID_HEIGHT: u32 = 80;
     const _FPS: u16 = 60;
 
-    let window_width: u32 = (GRID_WIDTH as f64 * CELL_SIZE) as u32;
-    let window_height: u32 = (GRID_HEIGHT as f64 * CELL_SIZE) as u32;
+    let sand_box_height = (GRID_HEIGHT as f64 * CELL_SIZE) as u32;
+    let sand_box_width = (GRID_WIDTH as f64 * CELL_SIZE) as u32;
+    let window_width: u32 = sand_box_width + 200;
+    let window_height: u32 = sand_box_height as u32;
 
     let mut window: PistonWindow =
         WindowSettings::new("Particle sim", [window_width, window_height])
@@ -45,10 +47,15 @@ fn main() {
 
     let mut selected_element: u8 = 1;
 
-    // FPS tracking
-    let mut frame_count = 0;
-    let mut fps_timer = Instant::now();
-    let fps_update_interval = Duration::from_secs(1);
+    // Load font
+    let assets = find_folder::Search::ParentsThenKids(3, 3)
+        .for_folder("assets")
+        .unwrap();
+
+    let texture_settings = TextureSettings::new();
+    let mut glyphs = window
+        .load_font(assets.join("OpenSans-Bold.ttf"), texture_settings)
+        .unwrap();
 
     // Draw grid
     while let Some(event) = window.next() {
@@ -108,17 +115,26 @@ fn main() {
                 &context,
                 graphics,
             );
-        });
 
-        // Update FPS counter
-        frame_count += 1;
-        if fps_timer.elapsed() >= fps_update_interval {
-            let fps = frame_count as f64 / fps_timer.elapsed().as_secs_f64();
-            print!("\rFPS: {:.2}", fps);
-            io::stdout().flush().unwrap();
-            frame_count = 0;
-            fps_timer = Instant::now();
-        }
+            // Draw text
+
+            let current = match selected_element {
+                1 => "Sand",
+                2 => "Clay",
+                3 => "Water",
+                _ => "<element>",
+            };
+
+            text::Text::new_color([1.0, 1.0, 1.0, 1.0], 24)
+                .draw(
+                    &format!("Current: {}", current),
+                    &mut glyphs,
+                    &context.draw_state,
+                    context.transform.trans(sand_box_width as f64 + 10.0, 25.0),
+                    graphics,
+                )
+                .unwrap();
+        });
     }
 }
 
