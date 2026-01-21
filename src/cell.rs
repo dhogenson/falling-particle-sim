@@ -86,7 +86,7 @@ impl Cell {
         Self {
             cell_color: random_color(SMOKE_COLOR),
             cell_type: SMOKE_CELL,
-            max_life_time: 200,
+            max_life_time: 400,
             life_time: 0,
         }
     }
