@@ -7,6 +7,10 @@ pub const WHITE_COLOR: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 pub const WET_SAND_COLOR: [f32; 4] = [0.49, 0.34, 0.08, 1.0];
 pub const LIGHT_BLUE_COLOR: [f32; 4] = [0.35, 0.68, 0.9, 1.0];
 pub const TRANSPAERNT_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+pub const FIRE_COLOR: [f32; 4] = [1.0, 0.28, 0.0, 1.0];
+pub const GLASS_COLOR: [f32; 4] = [1.0, 0.98, 0.96, 1.0];
+pub const SMOKE_COLOR: [f32; 4] = [0.24, 0.22, 0.22, 1.0];
+pub const STEAM_COLOR: [f32; 4] = [0.82, 0.82, 0.87, 1.0];
 
 pub fn random_color(base_color: [f32; 4]) -> [f32; 4] {
     let mut rng = rand::rng();

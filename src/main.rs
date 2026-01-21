@@ -16,10 +16,12 @@ use piston_window::{
 use piston_window::*;
 use wgpu_graphics::TextureSettings;
 
+use crate::cell::*;
+
 fn main() {
-    const CELL_SIZE: f64 = 10.0;
-    const GRID_WIDTH: u32 = 80;
-    const GRID_HEIGHT: u32 = 80;
+    const CELL_SIZE: f64 = 7.0;
+    const GRID_WIDTH: u32 = 170;
+    const GRID_HEIGHT: u32 = 130;
     const _FPS: u16 = 60;
 
     let sand_box_height = (GRID_HEIGHT as f64 * CELL_SIZE) as u32;
@@ -63,9 +65,10 @@ fn main() {
             // Handle one time press actions
 
             match key {
-                Key::D1 => selected_element = 1,
-                Key::D2 => selected_element = 2,
-                Key::D3 => selected_element = 3,
+                Key::D1 => selected_element = SAND_CELL,
+                Key::D2 => selected_element = CLAY_CELL,
+                Key::D3 => selected_element = WATER_CELL,
+                Key::D4 => selected_element = FIRE_CELL,
                 _ => {}
             }
         }
@@ -119,9 +122,10 @@ fn main() {
             // Draw text
 
             let current = match selected_element {
-                1 => "Sand",
-                2 => "Clay",
-                3 => "Water",
+                SAND_CELL => "Sand",
+                CLAY_CELL => "Clay",
+                WATER_CELL => "Water",
+                FIRE_CELL => "Fire",
                 _ => "<element>",
             };
 
@@ -175,9 +179,12 @@ fn draw_grid<G: Graphics>(
         let cell_rect: [f64; 4] = [x_pos, y_pos, cell_size, cell_size];
 
         let color: [f32; 4] = match selected_element {
-            1 => SAND_COLOR,
-            2 => CLAY_COLOR,
-            3 => WATER_COLOR,
+            SAND_CELL => SAND_COLOR,
+            CLAY_CELL => CLAY_COLOR,
+            WATER_CELL => WATER_COLOR,
+            FIRE_CELL => FIRE_COLOR,
+            SMOKE_CELL => SMOKE_COLOR,
+            STEAM_CELL => STEAM_COLOR,
             _ => TRANSPAERNT_COLOR,
         };
 

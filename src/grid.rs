@@ -1,4 +1,4 @@
-use crate::cell::{Cell, EMPTY_CELL, SAND_CELL, WATER_CELL, WET_SAND_CELL};
+use crate::cell::*;
 use rand;
 use rand::seq::SliceRandom;
 use std::io::{self, Write};
@@ -43,9 +43,10 @@ impl Grid {
             }
 
             self.grid[yp as usize][xp as usize] = match selected_element {
-                1 => Cell::new_sand(),
-                2 => Cell::new_clay(),
-                3 => Cell::new_water(),
+                SAND_CELL => Cell::new_sand(),
+                CLAY_CELL => Cell::new_clay(),
+                WATER_CELL => Cell::new_water(),
+                FIRE_CELL => Cell::new_fire(),
                 _ => Cell::new_empty(),
             };
         }
@@ -89,6 +90,7 @@ impl Grid {
         let mut sand_count: u32 = 0;
         let mut water_count: u32 = 0;
         let mut wet_sand_count: u32 = 0;
+        let mut fire_count: u32 = 0;
 
         for y in 0..self.height {
             for x in 0..self.width {
@@ -109,13 +111,17 @@ impl Grid {
                         self.update_wet_sand(x, y);
                         wet_sand_count += 1;
                     }
+                    FIRE_CELL => {
+                        self.update_fire(x, y);
+                        fire_count += 1
+                    }
                     _ => {}
                 }
             }
         }
         print!(
-            "\rSAND: {}, WATER: {}, WET_SAND: {}",
-            sand_count, water_count, wet_sand_count
+            "\rSAND: {}, WATER: {}, WET_SAND: {} FIRE: {}",
+            sand_count, water_count, wet_sand_count, fire_count
         );
         io::stdout().flush().unwrap();
     }
@@ -242,6 +248,86 @@ impl Grid {
                 self.processed[ty as usize][tx as usize] = true;
             }
             _ => {}
+        }
+    }
+
+    fn update_fire(&mut self, x: u32, y: u32) {
+        // Update and check life time
+        self.grid[y as usize][x as usize].life_time += 1;
+        if self.grid[y as usize][x as usize].life_time
+            >= self.grid[y as usize][x as usize].max_life_time
+        {
+            self.grid[y as usize][x as usize] = Cell::new_empty();
+            return;
+        }
+
+        let tx = x as i32;
+        let ty = (y as i32) - 1;
+
+        if tx < 0 || ty < 0 {
+            return;
+        }
+
+        self.fire_to_glass(x as i32, y as i32);
+
+        let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
+        targets.shuffle(&mut rand::rng());
+
+        for (tx, ty) in targets {
+            match self
+                .grid
+                .get(ty as usize)
+                .and_then(|row| row.get(tx as usize))
+                .map(|cell| cell.cell_type)
+            {
+                Some(EMPTY_CELL) => {
+                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+                    self.grid[y as usize][x as usize] = Cell::new_empty();
+                    self.processed[ty as usize][tx as usize] = true;
+                }
+                _ => {}
+            }
+        }
+
+        let mut targets = [(x - 1, y), (x + 1, y)];
+        targets.shuffle(&mut rand::rng());
+
+        for (tx, ty) in targets {
+            match self
+                .grid
+                .get(ty as usize)
+                .and_then(|row| row.get(tx as usize))
+                .map(|cell| cell.cell_type)
+            {
+                Some(EMPTY_CELL) => {
+                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+                    self.grid[y as usize][x as usize] = Cell::new_empty();
+                    self.processed[ty as usize][tx as usize] = true;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn fire_to_glass(&mut self, x: i32, y: i32) {
+        let mut cells: Vec<(i32, i32)> = Vec::new();
+
+        for cy in -1..2 {
+            for cx in -1..2 {
+                if cx + x >= 0
+                    && cy + y >= 0
+                    && cx + x < self.width as i32
+                    && cy + y < self.height as i32
+                {
+                    cells.push((cx + x, cy + y));
+                }
+            }
+        }
+
+        for (x, y) in cells {
+            if self.grid[y as usize][x as usize].cell_type == SAND_CELL {
+                self.grid[y as usize][x as usize] = Cell::new_glass();
+            }
         }
     }
 }
