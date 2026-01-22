@@ -66,7 +66,7 @@ fn main() {
 
             match key {
                 Key::D1 => selected_element = SAND_CELL,
-                Key::D2 => selected_element = CLAY_CELL,
+                Key::D2 => selected_element = STEEL_CELL,
                 Key::D3 => selected_element = WATER_CELL,
                 Key::D4 => selected_element = FIRE_CELL,
                 _ => {}
@@ -123,7 +123,7 @@ fn main() {
 
             let current = match selected_element {
                 SAND_CELL => "Sand",
-                CLAY_CELL => "Clay",
+                STEEL_CELL => "Steel",
                 WATER_CELL => "Water",
                 FIRE_CELL => "Fire",
                 _ => "<element>",
@@ -180,7 +180,7 @@ fn draw_grid<G: Graphics>(
 
         let color: [f32; 4] = match selected_element {
             SAND_CELL => SAND_COLOR,
-            CLAY_CELL => CLAY_COLOR,
+            STEEL_CELL => STEEL_COLOR,
             WATER_CELL => WATER_COLOR,
             FIRE_CELL => FIRE_COLOR,
             SMOKE_CELL => SMOKE_COLOR,

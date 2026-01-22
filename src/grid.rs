@@ -44,7 +44,7 @@ impl Grid {
 
             self.grid[yp as usize][xp as usize] = match selected_element {
                 SAND_CELL => Cell::new_sand(),
-                CLAY_CELL => Cell::new_clay(),
+                STEEL_CELL => Cell::new_steel(),
                 WATER_CELL => Cell::new_water(),
                 FIRE_CELL => Cell::new_fire(),
                 _ => Cell::new_empty(),
@@ -92,6 +92,7 @@ impl Grid {
         let mut wet_sand_count: u32 = 0;
         let mut fire_count: u32 = 0;
         let mut smoke_count: u32 = 0;
+        let mut steam_count: u32 = 0;
 
         for y in 0..self.height {
             for x in 0..self.width {
@@ -120,13 +121,17 @@ impl Grid {
                         self.update_smoke(x, y);
                         smoke_count += 1;
                     }
+                    STEAM_CELL => {
+                        self.update_steam(x, y);
+                        steam_count += 1;
+                    }
                     _ => {}
                 }
             }
         }
         print!(
-            "\rSAND: {}, WATER: {}, WET_SAND: {} FIRE: {} SMOKE: {}",
-            sand_count, water_count, wet_sand_count, fire_count, smoke_count
+            "\rSAND: {}, WATER: {}, WET_SAND: {} FIRE: {} SMOKE: {} STEAM: {}",
+            sand_count, water_count, wet_sand_count, fire_count, smoke_count, steam_count
         );
         io::stdout().flush().unwrap();
     }
@@ -275,6 +280,7 @@ impl Grid {
 
         self.fire_to_glass(x as i32, y as i32);
         self.fire_make_smoke(x as i32, y as i32);
+        self.fire_to_steam(x as i32, y as i32);
 
         let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
         targets.shuffle(&mut rand::rng());
@@ -420,6 +426,88 @@ impl Grid {
                     return;
                 }
                 _ => {}
+            }
+        }
+    }
+
+    fn update_steam(&mut self, x: u32, y: u32) {
+        // Update and check life time
+        self.grid[y as usize][x as usize].life_time += 1;
+        if self.grid[y as usize][x as usize].life_time
+            >= self.grid[y as usize][x as usize].max_life_time
+        {
+            self.grid[y as usize][x as usize] = Cell::new_empty();
+            return;
+        }
+
+        let x = x as i32;
+        let y = y as i32;
+
+        let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
+        targets.shuffle(&mut rand::rng());
+
+        for (tx, ty) in targets {
+            if tx < 0 || ty < 0 || tx >= self.width as i32 || ty >= self.height as i32 {
+                continue;
+            }
+            match self
+                .grid
+                .get(ty as usize)
+                .and_then(|row| row.get(tx as usize))
+                .map(|cell| cell.cell_type)
+            {
+                Some(EMPTY_CELL) => {
+                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+                    self.grid[y as usize][x as usize] = Cell::new_empty();
+                    self.processed[ty as usize][tx as usize] = true;
+                    return;
+                }
+                _ => {}
+            }
+        }
+
+        let mut targets = [(x - 1, y), (x + 1, y)];
+        targets.shuffle(&mut rand::rng());
+
+        for (tx, ty) in targets {
+            if tx < 0 || ty < 0 || tx >= self.width as i32 || ty >= self.height as i32 {
+                continue;
+            }
+            match self
+                .grid
+                .get(ty as usize)
+                .and_then(|row| row.get(tx as usize))
+                .map(|cell| cell.cell_type)
+            {
+                Some(EMPTY_CELL) => {
+                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+                    self.grid[y as usize][x as usize] = Cell::new_empty();
+                    self.processed[ty as usize][tx as usize] = true;
+                    return;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn fire_to_steam(&mut self, x: i32, y: i32) {
+        let mut cells: Vec<(i32, i32)> = Vec::new();
+
+        for cy in -1..2 {
+            for cx in -1..2 {
+                if cx + x >= 0
+                    && cy + y >= 0
+                    && cx + x < self.width as i32
+                    && cy + y < self.height as i32
+                {
+                    cells.push((cx + x, cy + y));
+                }
+            }
+        }
+
+        for (x, y) in cells {
+            if self.grid[y as usize][x as usize].cell_type == WATER_CELL {
+                self.grid[y as usize][x as usize] = Cell::new_steam();
             }
         }
     }

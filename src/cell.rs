@@ -2,7 +2,7 @@ use crate::color::*;
 
 pub const EMPTY_CELL: u8 = 0;
 pub const SAND_CELL: u8 = 1;
-pub const CLAY_CELL: u8 = 2;
+pub const STEEL_CELL: u8 = 2;
 pub const WATER_CELL: u8 = 3;
 pub const WET_SAND_CELL: u8 = 4;
 pub const FIRE_CELL: u8 = 5;
@@ -37,10 +37,10 @@ impl Cell {
         }
     }
 
-    pub fn new_clay() -> Self {
+    pub fn new_steel() -> Self {
         Self {
-            cell_color: random_color(CLAY_COLOR),
-            cell_type: CLAY_CELL,
+            cell_color: random_color(STEEL_COLOR),
+            cell_type: STEEL_CELL,
             max_life_time: 0,
             life_time: 0,
         }
@@ -95,7 +95,7 @@ impl Cell {
         Self {
             cell_color: random_color(STEAM_COLOR),
             cell_type: STEAM_CELL,
-            max_life_time: 200,
+            max_life_time: 600,
             life_time: 0,
         }
     }
