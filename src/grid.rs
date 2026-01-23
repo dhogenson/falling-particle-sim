@@ -4,14 +4,15 @@ use rand::seq::SliceRandom;
 use std::io::{self, Write};
 
 pub struct Grid {
-    pub width: u32,
-    pub height: u32,
+    pub width: i64,
+    pub height: i64,
     pub grid: Vec<Vec<Cell>>,
     processed: Vec<Vec<bool>>,
 }
 
 impl Grid {
-    pub fn new(width: u32, height: u32) -> Self {
+    // Helper function
+    pub fn new(width: i64, height: i64) -> Self {
         Self {
             width,
             height,
@@ -20,7 +21,8 @@ impl Grid {
         }
     }
 
-    fn make_grid(size_x: u32, size_y: u32) -> Vec<Vec<Cell>> {
+    // Retunes a grid
+    fn make_grid(size_x: i64, size_y: i64) -> Vec<Vec<Cell>> {
         let mut grid: Vec<Vec<Cell>> = Vec::new();
 
         for y in 0..size_y {
@@ -34,6 +36,7 @@ impl Grid {
         grid
     }
 
+    // Places a element in a circle based of the cords you want
     pub fn place_element(&mut self, x: i32, y: i32, selected_element: u8) {
         let positions = self.get_circle_positions(x as i32, y as i32, 2);
 
@@ -79,6 +82,7 @@ impl Grid {
         positions
     }
 
+    // Main update function for cells
     pub fn update(&mut self) {
         // Clear processed flags
         for row in &mut self.processed {
@@ -87,6 +91,7 @@ impl Grid {
             }
         }
 
+        // Track all cells
         let mut sand_count: u32 = 0;
         let mut water_count: u32 = 0;
         let mut wet_sand_count: u32 = 0;
@@ -136,15 +141,13 @@ impl Grid {
         io::stdout().flush().unwrap();
     }
 
-    pub fn update_sand(&mut self, x: u32, y: u32) {
-        let x = x as i32;
-        let y = y as i32;
+    // Rules of sand
+    // 1) It first tryes to move down
+    // 2) Then diagonally left or right
+    pub fn update_sand(&mut self, x: i64, y: i64) {
         let targets = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
 
         for (tx, ty) in targets {
-            if tx < 0 || ty < 0 {
-                continue;
-            }
             match self
                 .grid
                 .get(ty as usize)
@@ -152,36 +155,24 @@ impl Grid {
                 .map(|cell| cell.cell_type)
             {
                 Some(EMPTY_CELL) => {
-                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                    self.grid[y as usize][x as usize] = Cell::new_empty();
-                    self.processed[ty as usize][tx as usize] = true;
-                    // return;
+                    self.move_particle(x, y, tx, ty);
+                    return; // We dont want it to make more than one move a tick
                 }
                 _ => {}
             }
         }
     }
 
-    pub fn update_water(&mut self, x: u32, y: u32) {
-        let x = x as i32;
-        let y = y as i32;
-
+    // Rules of water
+    // 1) Its first goal is to move down, if it can it will if it cant it wont
+    // 2) Then it tries to move diagonally to try and move down
+    // 3) It will try to move left and right
+    pub fn update_water(&mut self, x: i64, y: i64) {
         self.water_to_wet_sand(x, y);
 
         // Priority 1: Fall straight down
         if self.try_move_water(x, y, x, y + 1) {
-            // self.water_to_wet_sand(x, y - 1);
             return;
-        }
-
-        // Priority 3: Spread horizontally
-        let mut horizontals = [(x - 1, y), (x + 1, y)];
-        horizontals.shuffle(&mut rand::rng());
-        for (tx, ty) in horizontals {
-            if self.try_move_water(x, y, tx, ty) {
-                // self.water_to_wet_sand(tx, ty);
-                return;
-            }
         }
 
         // Priority 2: Fall diagonally (randomize left/right)
@@ -189,26 +180,38 @@ impl Grid {
         diagonals.shuffle(&mut rand::rng());
         for (tx, ty) in diagonals {
             if self.try_move_water(x, y, tx, ty) {
-                // self.water_to_wet_sand(tx, ty);
+                return;
+            }
+        }
+
+        // Priority 3: Spread horizontally
+        let mut horizontals = [(x - 1, y), (x + 1, y)];
+        horizontals.shuffle(&mut rand::rng());
+        for (tx, ty) in horizontals {
+            if self.try_move_water(x, y, tx, ty) {
                 return;
             }
         }
     }
 
-    fn water_to_wet_sand(&mut self, x: i32, y: i32) {
-        let mut cells: Vec<(i32, i32)> = Vec::new();
+    // Gets all positions in the shape of a box that is in bound of the grid
+    fn get_square_area(&self, x: i64, y: i64) -> Vec<(i64, i64)> {
+        let mut cells: Vec<(i64, i64)> = Vec::new();
 
         for cy in -1..2 {
             for cx in -1..2 {
-                if cx + x >= 0
-                    && cy + y >= 0
-                    && cx + x < self.width as i32
-                    && cy + y < self.height as i32
-                {
+                if cx + x >= 0 && cy + y >= 0 && cx + x < self.width && cy + y < self.height {
                     cells.push((cx + x, cy + y));
                 }
             }
         }
+
+        cells
+    }
+
+    // Gets the cells of the at the water and then if they are sand it turns it into wet sand
+    fn water_to_wet_sand(&mut self, x: i64, y: i64) {
+        let cells = self.get_square_area(x, y);
 
         for (x, y) in cells {
             if self.grid[y as usize][x as usize].cell_type == SAND_CELL {
@@ -217,26 +220,31 @@ impl Grid {
         }
     }
 
-    fn try_move_water(&mut self, from_x: i32, from_y: i32, to_x: i32, to_y: i32) -> bool {
-        if to_x < 0 || to_y < 0 {
+    // tx: Target X
+    // ty: Target Y
+    // Tryes to move the water with the rules of moving water, if it cant move it will return false
+    // if it can move it will return true
+    fn try_move_water(&mut self, x: i64, y: i64, tx: i64, ty: i64) -> bool {
+        if tx < 0 || ty < 0 {
             return false;
         }
         if self
             .grid
-            .get(to_y as usize)
-            .and_then(|row| row.get(to_x as usize))
+            .get(ty as usize)
+            .and_then(|row| row.get(tx as usize))
             .map(|cell| cell.cell_type)
             == Some(0)
         {
-            self.grid[to_y as usize][to_x as usize] = self.grid[from_y as usize][from_x as usize];
-            self.grid[from_y as usize][from_x as usize] = Cell::new_empty();
-            self.processed[to_y as usize][to_x as usize] = true;
-            return true;
+            self.move_particle(x, y, tx, ty)
         }
         false
     }
 
-    fn update_wet_sand(&mut self, x: u32, y: u32) {
+    // Rules of sand
+    // 1) It can only move down
+    // 2) If the wet sand is below any water it will swap with its positions with the water
+    // to make a sinking effect
+    fn update_wet_sand(&mut self, x: i64, y: i64) {
         let tx = x;
         let ty = y + 1;
 
@@ -246,23 +254,35 @@ impl Grid {
             .and_then(|row| row.get(tx as usize))
             .map(|cell| cell.cell_type)
         {
-            Some(EMPTY_CELL) => {
-                self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                self.grid[y as usize][x as usize] = Cell::new_empty();
-                self.processed[ty as usize][tx as usize] = true;
-            }
-            Some(WATER_CELL) => {
-                let cell_buffer = self.grid[ty as usize][tx as usize];
-                self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                self.grid[y as usize][x as usize] = cell_buffer;
-                self.processed[ty as usize][tx as usize] = true;
-            }
+            Some(EMPTY_CELL) => self.move_particle(x, y, tx, ty),
+            Some(WATER_CELL) => self.swap_particle(x, y, tx, ty),
             _ => {}
         }
     }
 
-    fn update_fire(&mut self, x: u32, y: u32) {
-        // Update and check life time
+    // tx: Target X
+    // ty: Target Y
+    // Swaps a particle from position to taget position
+    fn swap_particle(&mut self, x: i64, y: i64, tx: i64, ty: i64) {
+        let cell_buffer = self.grid[ty as usize][tx as usize];
+        self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+        self.grid[y as usize][x as usize] = cell_buffer;
+        self.processed[ty as usize][tx as usize] = true;
+    }
+
+    // tx: Target X
+    // ty: Target Y
+    // Moves a particle to target position
+    // Note: Replaces the x and y position with a empty cell
+    fn move_particle(&mut self, x: i64, y: i64, tx: i64, ty: i64) {
+        self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+        self.grid[y as usize][x as usize] = Cell::new_empty();
+        self.processed[ty as usize][tx as usize] = true;
+    }
+
+    // Updates life time for a cell
+    // If cell has lived the amount of its max life time it dies
+    fn update_life_time(&mut self, x: i64, y: i64) {
         self.grid[y as usize][x as usize].life_time += 1;
         if self.grid[y as usize][x as usize].life_time
             >= self.grid[y as usize][x as usize].max_life_time
@@ -270,34 +290,22 @@ impl Grid {
             self.grid[y as usize][x as usize] = Cell::new_empty();
             return;
         }
+    }
 
-        let tx = x as i32;
-        let ty = (y as i32) - 1;
+    // Updates cell based of grass partible rules
+    fn update_fire(&mut self, x: i64, y: i64) {
+        self.update_life_time(x, y);
 
-        if tx < 0 || ty < 0 {
-            return;
-        }
-
-        self.fire_to_glass(x as i32, y as i32);
-        self.fire_make_smoke(x as i32, y as i32);
-        self.fire_to_steam(x as i32, y as i32);
+        self.fire_to_glass(x, y);
+        self.fire_make_smoke(x, y);
+        self.fire_to_steam(x, y);
 
         let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
         targets.shuffle(&mut rand::rng());
 
         for (tx, ty) in targets {
-            match self
-                .grid
-                .get(ty as usize)
-                .and_then(|row| row.get(tx as usize))
-                .map(|cell| cell.cell_type)
-            {
-                Some(EMPTY_CELL) => {
-                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                    self.grid[y as usize][x as usize] = Cell::new_empty();
-                    self.processed[ty as usize][tx as usize] = true;
-                }
-                _ => {}
+            if !self.try_move_gass(x, y, tx, ty) {
+                continue;
             }
         }
 
@@ -305,36 +313,15 @@ impl Grid {
         targets.shuffle(&mut rand::rng());
 
         for (tx, ty) in targets {
-            match self
-                .grid
-                .get(ty as usize)
-                .and_then(|row| row.get(tx as usize))
-                .map(|cell| cell.cell_type)
-            {
-                Some(EMPTY_CELL) => {
-                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                    self.grid[y as usize][x as usize] = Cell::new_empty();
-                    self.processed[ty as usize][tx as usize] = true;
-                }
-                _ => {}
+            if !self.try_move_gass(x, y, tx, ty) {
+                continue;
             }
         }
     }
 
-    fn fire_to_glass(&mut self, x: i32, y: i32) {
-        let mut cells: Vec<(i32, i32)> = Vec::new();
-
-        for cy in -1..2 {
-            for cx in -1..2 {
-                if cx + x >= 0
-                    && cy + y >= 0
-                    && cx + x < self.width as i32
-                    && cy + y < self.height as i32
-                {
-                    cells.push((cx + x, cy + y));
-                }
-            }
-        }
+    // Turns any cells that are sand cells into glass at a givin point
+    fn fire_to_glass(&mut self, x: i64, y: i64) {
+        let cells: Vec<(i64, i64)> = self.get_square_area(x, y);
 
         for (x, y) in cells {
             if self.grid[y as usize][x as usize].cell_type == SAND_CELL {
@@ -343,23 +330,11 @@ impl Grid {
         }
     }
 
-    fn fire_make_smoke(&mut self, x: i32, y: i32) {
+    // Has a random chance to make smoke at a giving point
+    fn fire_make_smoke(&mut self, x: i64, y: i64) {
         let random_number = rand::random_range(0..100);
         if random_number > 98 {
-            let mut cells: Vec<(i32, i32)> = Vec::new();
-
-            for cy in -1..2 {
-                for cx in -1..2 {
-                    if cx + x >= 0
-                        && cy + y >= 0
-                        && cx + x < self.width as i32
-                        && cy + y < self.height as i32
-                        && self.grid[(cy + y) as usize][(cx + x) as usize].cell_type == EMPTY_CELL
-                    {
-                        cells.push((cx + x, cy + y));
-                    }
-                }
-            }
+            let cells: Vec<(i64, i64)> = self.get_square_area(x, y);
 
             if !cells.is_empty() {
                 let random_cell = cells[rand::random_range(0..cells.len())];
@@ -370,15 +345,61 @@ impl Grid {
         }
     }
 
-    fn update_smoke(&mut self, x: u32, y: u32) {
-        // Update and check life time
-        self.grid[y as usize][x as usize].life_time += 1;
-        if self.grid[y as usize][x as usize].life_time
-            >= self.grid[y as usize][x as usize].max_life_time
-        {
-            self.grid[y as usize][x as usize] = Cell::new_empty();
-            return;
+    // Moves smoke based of the gass particle rules
+    //
+    // First
+    // 1) First it tries to move up or diagonally
+    // 2) And then tries to move left or right
+    fn update_smoke(&mut self, x: i64, y: i64) {
+        self.update_life_time(x, y);
+
+        // Priority 1: fall diagonally or upwards
+        let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
+        targets.shuffle(&mut rand::rng());
+
+        for (tx, ty) in targets {
+            if !self.try_move_gass(x, y, tx, ty) {
+                continue;
+            }
         }
+
+        // Priority 2: move left/right
+
+        let mut targets = [(x - 1, y), (x + 1, y)];
+        targets.shuffle(&mut rand::rng());
+
+        for (tx, ty) in targets {
+            if !self.try_move_gass(x, y, tx, ty) {
+                continue;
+            }
+        }
+    }
+
+    // tx: Target X
+    // ty: Target Y
+    // Trys to move a gass particle, if it cant it returns false, if it can it returns true
+    fn try_move_gass(&mut self, x: i64, y: i64, tx: i64, ty: i64) -> bool {
+        if tx < 0 || ty < 0 || tx >= self.width || ty >= self.height {
+            return false;
+        }
+        if self
+            .grid
+            .get(ty as usize)
+            .and_then(|row| row.get(tx as usize))
+            .map(|cell| cell.cell_type)
+            == Some(0)
+        {
+            self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
+            self.grid[y as usize][x as usize] = Cell::new_empty();
+            self.processed[ty as usize][tx as usize] = true;
+            return true;
+        }
+        false
+    }
+
+    // Moves the steam based of the gass particle rules
+    fn update_steam(&mut self, x: i64, y: i64) {
+        self.update_life_time(x, y);
 
         let x = x as i32;
         let y = y as i32;
@@ -430,80 +451,9 @@ impl Grid {
         }
     }
 
-    fn update_steam(&mut self, x: u32, y: u32) {
-        // Update and check life time
-        self.grid[y as usize][x as usize].life_time += 1;
-        if self.grid[y as usize][x as usize].life_time
-            >= self.grid[y as usize][x as usize].max_life_time
-        {
-            self.grid[y as usize][x as usize] = Cell::new_empty();
-            return;
-        }
-
-        let x = x as i32;
-        let y = y as i32;
-
-        let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
-        targets.shuffle(&mut rand::rng());
-
-        for (tx, ty) in targets {
-            if tx < 0 || ty < 0 || tx >= self.width as i32 || ty >= self.height as i32 {
-                continue;
-            }
-            match self
-                .grid
-                .get(ty as usize)
-                .and_then(|row| row.get(tx as usize))
-                .map(|cell| cell.cell_type)
-            {
-                Some(EMPTY_CELL) => {
-                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                    self.grid[y as usize][x as usize] = Cell::new_empty();
-                    self.processed[ty as usize][tx as usize] = true;
-                    return;
-                }
-                _ => {}
-            }
-        }
-
-        let mut targets = [(x - 1, y), (x + 1, y)];
-        targets.shuffle(&mut rand::rng());
-
-        for (tx, ty) in targets {
-            if tx < 0 || ty < 0 || tx >= self.width as i32 || ty >= self.height as i32 {
-                continue;
-            }
-            match self
-                .grid
-                .get(ty as usize)
-                .and_then(|row| row.get(tx as usize))
-                .map(|cell| cell.cell_type)
-            {
-                Some(EMPTY_CELL) => {
-                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                    self.grid[y as usize][x as usize] = Cell::new_empty();
-                    self.processed[ty as usize][tx as usize] = true;
-                    return;
-                }
-                _ => {}
-            }
-        }
-    }
-
-    fn fire_to_steam(&mut self, x: i32, y: i32) {
-        let mut cells: Vec<(i32, i32)> = Vec::new();
-
-        for cy in -1..2 {
-            for cx in -1..2 {
-                if cx + x >= 0
-                    && cy + y >= 0
-                    && cx + x < self.width as i32
-                    && cy + y < self.height as i32
-                {
-                    cells.push((cx + x, cy + y));
-                }
-            }
-        }
+    // If theres any water around the giving cords it will turn into steam
+    fn fire_to_steam(&mut self, x: i64, y: i64) {
+        let cells: Vec<(i64, i64)> = self.get_square_area(x, y);
 
         for (x, y) in cells {
             if self.grid[y as usize][x as usize].cell_type == WATER_CELL {
@@ -512,3 +462,5 @@ impl Grid {
         }
     }
 }
+
+// Current lines of code: 523

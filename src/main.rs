@@ -20,14 +20,14 @@ use crate::cell::*;
 
 fn main() {
     const CELL_SIZE: f64 = 7.0;
-    const GRID_WIDTH: u32 = 170;
-    const GRID_HEIGHT: u32 = 130;
+    const GRID_WIDTH: i64 = 170;
+    const GRID_HEIGHT: i64 = 130;
     const _FPS: u16 = 60;
 
     let sand_box_height = (GRID_HEIGHT as f64 * CELL_SIZE) as u32;
     let sand_box_width = (GRID_WIDTH as f64 * CELL_SIZE) as u32;
     let window_width: u32 = sand_box_width + 200;
-    let window_height: u32 = sand_box_height as u32;
+    let window_height: u32 = sand_box_height;
 
     let mut window: PistonWindow =
         WindowSettings::new("Particle sim", [window_width, window_height])
