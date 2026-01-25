@@ -389,9 +389,7 @@ impl Grid {
             .map(|cell| cell.cell_type)
             == Some(0)
         {
-            self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-            self.grid[y as usize][x as usize] = Cell::new_empty();
-            self.processed[ty as usize][tx as usize] = true;
+            self.move_particle(x, y, tx, ty);
             return true;
         }
         false
@@ -401,14 +399,11 @@ impl Grid {
     fn update_steam(&mut self, x: i64, y: i64) {
         self.update_life_time(x, y);
 
-        let x = x as i32;
-        let y = y as i32;
-
         let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
         targets.shuffle(&mut rand::rng());
 
         for (tx, ty) in targets {
-            if tx < 0 || ty < 0 || tx >= self.width as i32 || ty >= self.height as i32 {
+            if tx < 0 || ty < 0 || tx >= self.width || ty >= self.height {
                 continue;
             }
             match self
@@ -418,9 +413,7 @@ impl Grid {
                 .map(|cell| cell.cell_type)
             {
                 Some(EMPTY_CELL) => {
-                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                    self.grid[y as usize][x as usize] = Cell::new_empty();
-                    self.processed[ty as usize][tx as usize] = true;
+                    self.move_particle(x, y, tx, ty);
                     return;
                 }
                 _ => {}
@@ -431,7 +424,7 @@ impl Grid {
         targets.shuffle(&mut rand::rng());
 
         for (tx, ty) in targets {
-            if tx < 0 || ty < 0 || tx >= self.width as i32 || ty >= self.height as i32 {
+            if tx < 0 || ty < 0 || tx >= self.width || ty >= self.height {
                 continue;
             }
             match self
@@ -441,9 +434,7 @@ impl Grid {
                 .map(|cell| cell.cell_type)
             {
                 Some(EMPTY_CELL) => {
-                    self.grid[ty as usize][tx as usize] = self.grid[y as usize][x as usize];
-                    self.grid[y as usize][x as usize] = Cell::new_empty();
-                    self.processed[ty as usize][tx as usize] = true;
+                    self.move_particle(x, y, tx, ty);
                     return;
                 }
                 _ => {}
@@ -462,5 +453,3 @@ impl Grid {
         }
     }
 }
-
-// Current lines of code: 523
