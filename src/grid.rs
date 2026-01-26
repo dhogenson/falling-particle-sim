@@ -37,11 +37,11 @@ impl Grid {
     }
 
     // Places a element in a circle based of the cords you want
-    pub fn place_element(&mut self, x: i32, y: i32, selected_element: u8) {
-        let positions = self.get_circle_positions(x as i32, y as i32, 2);
+    pub fn place_element(&mut self, x: i32, y: i32, selected_element: u8, brush_size: i32) {
+        let positions = self.get_circle_positions(x, y, brush_size);
 
         for (xp, yp) in positions {
-            if self.grid[yp as usize][xp as usize].cell_type != 0 {
+            if self.grid[yp as usize][xp as usize].cell_type != 0 && selected_element != 0 {
                 continue;
             }
 
@@ -50,6 +50,7 @@ impl Grid {
                 STEEL_CELL => Cell::new_steel(),
                 WATER_CELL => Cell::new_water(),
                 FIRE_CELL => Cell::new_fire(),
+                EMPTY_CELL => Cell::new_empty(),
                 _ => Cell::new_empty(),
             };
         }

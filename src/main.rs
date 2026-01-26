@@ -44,6 +44,8 @@ fn main() {
     let mut board_y: i32 = 0;
     let mut mouse_held = false;
 
+    let mut brush_size: i32 = 2;
+
     let update_interval = Duration::from_millis(5);
     let mut last_update = Instant::now();
 
@@ -65,6 +67,7 @@ fn main() {
             // Handle one time press actions
 
             match key {
+                Key::D5 => selected_element = EMPTY_CELL,
                 Key::D1 => selected_element = SAND_CELL,
                 Key::D2 => selected_element = STEEL_CELL,
                 Key::D3 => selected_element = WATER_CELL,
@@ -90,6 +93,15 @@ fn main() {
             mouse_held = false;
         }
 
+        if let Some(scroll) = event.mouse_scroll_args() {
+            let scroll_y = scroll[1]; // Vertical scroll
+            // scroll_y is positive when scrolling up, negative when scrolling down
+
+            // Example: Adjust brush size based on scroll
+            brush_size += scroll_y as i32;
+            brush_size = brush_size.max(1).min(10); // Clamp between 1 and 10
+        }
+
         // Place element
         if mouse_held
             && board_x >= 0
@@ -97,7 +109,7 @@ fn main() {
             && board_y >= 0
             && board_y < GRID_HEIGHT as i32
         {
-            grid.place_element(board_x, board_y, selected_element);
+            grid.place_element(board_x, board_y, selected_element, brush_size);
         }
 
         // Update grid
@@ -115,6 +127,7 @@ fn main() {
                 board_x,
                 board_y,
                 selected_element,
+                brush_size,
                 &context,
                 graphics,
             );
@@ -122,6 +135,7 @@ fn main() {
             // Draw text
 
             let current = match selected_element {
+                EMPTY_CELL => "Eraser",
                 SAND_CELL => "Sand",
                 STEEL_CELL => "Steel",
                 WATER_CELL => "Water",
@@ -138,6 +152,15 @@ fn main() {
                     graphics,
                 )
                 .unwrap();
+            text::Text::new_color([1.0, 1.0, 1.0, 1.0], 24)
+                .draw(
+                    &format!("Brush size: {}", brush_size),
+                    &mut glyphs,
+                    &context.draw_state,
+                    context.transform.trans(sand_box_width as f64 + 10.0, 50.0),
+                    graphics,
+                )
+                .unwrap();
         });
     }
 }
@@ -148,10 +171,11 @@ fn draw_grid<G: Graphics>(
     board_x: i32,
     board_y: i32,
     selected_element: u8,
+    brush_size: i32,
     context: &Context,
     graphics: &mut G,
 ) {
-    let mouse_hover = grid.get_circle_positions(board_x, board_y, 2);
+    let mouse_hover = grid.get_circle_positions(board_x, board_y, brush_size);
 
     // Draw simple grid
     for y in 0..grid.height {
@@ -185,6 +209,7 @@ fn draw_grid<G: Graphics>(
             FIRE_CELL => FIRE_COLOR,
             SMOKE_CELL => SMOKE_COLOR,
             STEAM_CELL => STEAM_COLOR,
+            EMPTY_CELL => LIGHT_BLUE_COLOR,
             _ => TRANSPAERNT_COLOR,
         };
 
