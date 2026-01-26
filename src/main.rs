@@ -7,10 +7,11 @@ use std::time::{Duration, Instant};
 
 use color::*;
 use grid::Grid;
+use ui::text::Label;
 
 use piston_window::{
     PistonWindow, WindowSettings,
-    graphics::{Context, Graphics, Transformed, clear, rectangle, text},
+    graphics::{Context, Graphics, clear, rectangle},
 };
 
 use piston_window::*;
@@ -95,11 +96,8 @@ fn main() {
 
         if let Some(scroll) = event.mouse_scroll_args() {
             let scroll_y = scroll[1]; // Vertical scroll
-            // scroll_y is positive when scrolling up, negative when scrolling down
-
-            // Example: Adjust brush size based on scroll
             brush_size += scroll_y as i32;
-            brush_size = brush_size.max(1).min(10); // Clamp between 1 and 10
+            brush_size = brush_size.max(1).min(10);
         }
 
         // Place element
@@ -133,7 +131,6 @@ fn main() {
             );
 
             // Draw text
-
             let current = match selected_element {
                 EMPTY_CELL => "Eraser",
                 SAND_CELL => "Sand",
@@ -143,24 +140,20 @@ fn main() {
                 _ => "<element>",
             };
 
-            text::Text::new_color([1.0, 1.0, 1.0, 1.0], 24)
-                .draw(
-                    &format!("Current: {}", current),
-                    &mut glyphs,
-                    &context.draw_state,
-                    context.transform.trans(sand_box_width as f64 + 10.0, 25.0),
-                    graphics,
-                )
-                .unwrap();
-            text::Text::new_color([1.0, 1.0, 1.0, 1.0], 24)
-                .draw(
-                    &format!("Brush size: {}", brush_size),
-                    &mut glyphs,
-                    &context.draw_state,
-                    context.transform.trans(sand_box_width as f64 + 10.0, 50.0),
-                    graphics,
-                )
-                .unwrap();
+            let current_brush = Label::new(
+                sand_box_width as f64 + 10.0,
+                25.0,
+                format!("Current: {}", current),
+            );
+
+            let brush_size = Label::new(
+                sand_box_width as f64 + 10.0,
+                50.0,
+                format!("Brush size: {}", brush_size),
+            );
+
+            current_brush.draw(&context, graphics, &mut glyphs);
+            brush_size.draw(&context, graphics, &mut glyphs);
         });
     }
 }
