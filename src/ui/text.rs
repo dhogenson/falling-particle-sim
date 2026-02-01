@@ -1,4 +1,4 @@
-use piston_window::graphics::{Context, Graphics, Transformed, character, text};
+use piston_window::graphics::{character, text, Context, Graphics, Transformed};
 
 pub struct Label {
     x: f64,

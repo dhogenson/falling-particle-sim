@@ -11,6 +11,7 @@ pub const FIRE_COLOR: [f32; 4] = [1.0, 0.28, 0.0, 1.0];
 pub const GLASS_COLOR: [f32; 4] = [1.0, 0.98, 0.96, 1.0];
 pub const SMOKE_COLOR: [f32; 4] = [0.24, 0.22, 0.22, 1.0];
 pub const STEAM_COLOR: [f32; 4] = [0.82, 0.82, 0.87, 1.0];
+pub const BLACK_COLOR: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
 pub fn random_color(base_color: [f32; 4]) -> [f32; 4] {
     let mut rng = rand::rng();

@@ -1,4 +1,4 @@
-use piston_window::graphics::{Context, Graphics, rectangle};
+use piston_window::graphics::{rectangle, Context, Graphics};
 
 pub struct UIButton {
     x: f64,

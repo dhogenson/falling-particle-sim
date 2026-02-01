@@ -10,8 +10,8 @@ use grid::Grid;
 use ui::text::Label;
 
 use piston_window::{
+    graphics::{clear, rectangle, Context, Graphics},
     PistonWindow, WindowSettings,
-    graphics::{Context, Graphics, clear, rectangle},
 };
 
 use piston_window::*;
@@ -47,7 +47,7 @@ fn main() {
 
     let mut brush_size: i32 = 2;
 
-    let update_interval = Duration::from_millis(5);
+    let update_interval = Duration::from_millis(10);
     let mut last_update = Instant::now();
 
     let mut selected_element: u8 = 1;
@@ -122,6 +122,8 @@ fn main() {
             draw_grid(
                 &grid,
                 CELL_SIZE,
+                window_width,
+                window_height,
                 board_x,
                 board_y,
                 selected_element,
@@ -161,6 +163,8 @@ fn main() {
 fn draw_grid<G: Graphics>(
     grid: &Grid,
     cell_size: f64,
+    window_width: u32,
+    window_height: u32,
     board_x: i32,
     board_y: i32,
     selected_element: u8,
@@ -178,16 +182,30 @@ fn draw_grid<G: Graphics>(
 
             let cell_rect: [f64; 4] = [x_pos, y_pos, cell_size, cell_size];
 
+            let idx = (y * grid.width + x) as usize;
+
             // Don't render if cell is empty
-            if grid.grid[y as usize][x as usize].cell_type == 0 {
+            if grid.grid[idx].cell_type == 0 {
                 continue;
             }
 
-            let color = grid.grid[y as usize][x as usize].cell_color;
+            let color = grid.grid[idx].cell_color;
 
             rectangle(color, cell_rect, context.transform, graphics);
         }
     }
+
+    // Draw black boarder to the side of the grid
+    let x_pos: f64 = grid.width as f64 * cell_size;
+    let y_pos: f64 = 0.0;
+    let cell_rect: [f64; 4] = [
+        x_pos,
+        y_pos,
+        window_width as f64 - x_pos,
+        window_height as f64,
+    ];
+
+    rectangle(BLACK_COLOR, cell_rect, context.transform, graphics);
 
     // Draw mouse hover
     for (x, y) in mouse_hover {
