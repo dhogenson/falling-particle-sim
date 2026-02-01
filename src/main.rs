@@ -1,4 +1,3 @@
-mod cell;
 mod color;
 mod grid;
 mod ui;
@@ -6,18 +5,17 @@ mod ui;
 use std::time::{Duration, Instant};
 
 use color::*;
-use grid::Grid;
+use grid::cell::*;
+use grid::grid::Grid;
 use ui::text::Label;
 
 use piston_window::{
+    graphics::{clear, rectangle, Context, Graphics},
     PistonWindow, WindowSettings,
-    graphics::{Context, Graphics, clear, rectangle},
 };
 
 use piston_window::*;
 use wgpu_graphics::TextureSettings;
-
-use crate::cell::*;
 
 const CELL_SIZE: f64 = 7.0;
 const GRID_WIDTH: i64 = 170;

@@ -1,0 +1,190 @@
+use super::cell::*;
+use std::time::Instant;
+
+use super::debug::DebugInfo;
+
+pub struct Grid {
+    pub width: i64,
+    pub height: i64,
+    pub grid: Vec<Cell>,
+    processed: Vec<bool>,
+    pub temperature: Vec<i64>,
+    pub debug_info: DebugInfo,
+}
+
+impl Grid {
+    // Helper function to convert 2D coordinates to 1D index
+    #[inline]
+    pub(crate) fn idx(&self, x: i64, y: i64) -> usize {
+        (y * self.width + x) as usize
+    }
+
+    // Helper function
+    pub fn new(width: i64, height: i64) -> Self {
+        Self {
+            width,
+            height,
+            grid: Self::make_grid(width, height),
+            processed: vec![false; (width * height) as usize],
+            temperature: vec![0; (width * height) as usize],
+            debug_info: DebugInfo::new(),
+        }
+    }
+
+    // Returns a grid
+    fn make_grid(size_x: i64, size_y: i64) -> Vec<Cell> {
+        vec![Cell::new_empty(); (size_x * size_y) as usize]
+    }
+
+    // Places a element in a circle based of the cords you want
+    pub fn place_element(&mut self, x: i32, y: i32, selected_element: u8, brush_size: i32) {
+        let positions = self.get_circle_positions(x, y, brush_size);
+
+        for (xp, yp) in positions {
+            let idx = self.idx(xp as i64, yp as i64);
+            if self.grid[idx].cell_type != 0 && selected_element != 0 {
+                continue;
+            }
+
+            self.grid[idx] = match selected_element {
+                SAND_CELL => Cell::new_sand(),
+                STEEL_CELL => Cell::new_steel(),
+                WATER_CELL => Cell::new_water(),
+                FIRE_CELL => Cell::new_fire(),
+                EMPTY_CELL => Cell::new_empty(),
+                _ => Cell::new_empty(),
+            };
+        }
+    }
+
+    // Get all list elements in a circle
+    pub fn get_circle_positions(
+        &self,
+        center_x: i32,
+        center_y: i32,
+        radius: i32,
+    ) -> Vec<(i32, i32)> {
+        let mut positions = Vec::new();
+
+        for dy in -radius..=radius {
+            for dx in -radius..=radius {
+                // Check if point is within circle: x² + y² ≤ r²
+                if dx * dx + dy * dy <= radius * radius {
+                    let x = center_x + dx;
+                    let y = center_y + dy;
+
+                    // Bounds check
+                    if x >= 0 && y >= 0 && x < self.width as i32 && y < self.height as i32 {
+                        positions.push((x, y));
+                    }
+                }
+            }
+        }
+
+        positions
+    }
+
+    // Main update function for cells
+    pub fn update(&mut self) {
+        let start = Instant::now();
+        // Clear processed flags
+        self.processed.fill(false);
+
+        // Clear temp
+        self.temperature.fill(0);
+
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let idx = self.idx(x, y);
+                if self.processed[idx] {
+                    continue;
+                }
+                let cell_type = self.grid[idx].cell_type;
+                match cell_type {
+                    SAND_CELL => {
+                        self.update_sand(x, y);
+                        self.debug_info.sand_count += 1;
+                    }
+                    WATER_CELL => {
+                        self.update_water(x, y);
+                        self.debug_info.water_count += 1;
+                    }
+                    WET_SAND_CELL => {
+                        self.update_wet_sand(x, y);
+                        self.debug_info.wet_sand_count += 1;
+                    }
+                    FIRE_CELL => {
+                        self.update_fire(x, y);
+                        self.debug_info.fire_count += 1
+                    }
+                    SMOKE_CELL => {
+                        self.update_smoke(x, y);
+                        self.debug_info.smoke_count += 1;
+                    }
+                    STEAM_CELL => {
+                        self.update_steam(x, y);
+                        self.debug_info.steam_count += 1;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let duration = start.elapsed();
+        self.debug_info.time_to_update_cells = duration;
+        // self.debug_info.print_info();
+    }
+
+    // Gets all positions in the shape of a box that is in bound of the grid
+    pub(crate) fn get_square_area(&self, x: i64, y: i64) -> impl Iterator<Item = (i64, i64)> + '_ {
+        let min_x = (x - 1).max(0);
+        let max_x = (x + 1).min(self.width - 1);
+        let min_y = (y - 1).max(0);
+        let max_y = (y + 1).min(self.height - 1);
+
+        (min_y..=max_y).flat_map(move |cy| (min_x..=max_x).map(move |cx| (cx, cy)))
+    }
+
+    // tx: Target X
+    // ty: Target Y
+    // Swaps a particle from position to taget position
+    pub(crate) fn swap_particle(&mut self, x: i64, y: i64, tx: i64, ty: i64) {
+        let src_idx = self.idx(x, y);
+        let dst_idx = self.idx(tx, ty);
+        self.grid.swap(src_idx, dst_idx);
+        self.processed[dst_idx] = true;
+    }
+
+    // tx: Target X
+    // ty: Target Y
+    // Moves a particle to target position
+    // Note: Replaces the x and y position with a empty cell
+    pub(crate) fn move_particle(&mut self, x: i64, y: i64, tx: i64, ty: i64) {
+        let src_idx = self.idx(x, y);
+        let dst_idx = self.idx(tx, ty);
+        self.grid[dst_idx] = self.grid[src_idx];
+        self.grid[src_idx] = Cell::new_empty();
+        self.processed[dst_idx] = true;
+    }
+
+    // Updates life time for a cell
+    // If cell has lived the amount of its max life time it dies
+    pub(crate) fn update_life_time(&mut self, x: i64, y: i64) {
+        let idx = self.idx(x, y);
+        self.grid[idx].life_time += 1;
+        if self.grid[idx].life_time >= self.grid[idx].max_life_time {
+            self.grid[idx] = Cell::new_empty();
+            return;
+        }
+    }
+
+    pub(crate) fn update_temperature(&mut self, x: i64, y: i64, temperature: i64) {
+        let cells: Vec<_> = self.get_square_area(x, y).collect();
+
+        // tx: Target X
+        // ty: Target Y
+        for (tx, ty) in cells {
+            let idx = self.idx(tx, ty);
+            self.temperature[idx] += temperature;
+        }
+    }
+}

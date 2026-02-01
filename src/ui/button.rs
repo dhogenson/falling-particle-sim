@@ -1,5 +1,6 @@
-use piston_window::graphics::{rectangle, Context, Graphics};
+use piston_window::graphics::{Context, Graphics, rectangle};
 
+#[allow(dead_code)]
 pub struct UIButton {
     x: f64,
     y: f64,
@@ -9,6 +10,7 @@ pub struct UIButton {
     pub color: [f32; 4],
 }
 
+#[allow(dead_code)]
 impl UIButton {
     pub fn new(x: f64, y: f64, width: f64, height: f64, label: &str, color: [f32; 4]) -> Self {
         UIButton {
