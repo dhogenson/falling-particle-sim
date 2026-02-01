@@ -10,8 +10,8 @@ use grid::Grid;
 use ui::text::Label;
 
 use piston_window::{
-    graphics::{clear, rectangle, Context, Graphics},
     PistonWindow, WindowSettings,
+    graphics::{Context, Graphics, clear, rectangle},
 };
 
 use piston_window::*;
@@ -19,15 +19,16 @@ use wgpu_graphics::TextureSettings;
 
 use crate::cell::*;
 
-fn main() {
-    const CELL_SIZE: f64 = 7.0;
-    const GRID_WIDTH: i64 = 170;
-    const GRID_HEIGHT: i64 = 130;
-    const _FPS: u16 = 60;
+const CELL_SIZE: f64 = 7.0;
+const GRID_WIDTH: i64 = 170;
+const GRID_HEIGHT: i64 = 130;
+const _FPS: u16 = 60;
+const DEBUG: bool = false;
 
+fn main() {
     let sand_box_height = (GRID_HEIGHT as f64 * CELL_SIZE) as u32;
     let sand_box_width = (GRID_WIDTH as f64 * CELL_SIZE) as u32;
-    let window_width: u32 = sand_box_width + 200;
+    let window_width: u32 = sand_box_width + 300;
     let window_height: u32 = sand_box_height;
 
     let mut window: PistonWindow =
@@ -148,14 +149,60 @@ fn main() {
                 format!("Current: {}", current),
             );
 
-            let brush_size = Label::new(
+            let brush_size_label = Label::new(
                 sand_box_width as f64 + 10.0,
                 50.0,
                 format!("Brush size: {}", brush_size),
             );
 
             current_brush.draw(&context, graphics, &mut glyphs);
-            brush_size.draw(&context, graphics, &mut glyphs);
+            brush_size_label.draw(&context, graphics, &mut glyphs);
+
+            let sand_label = Label::new(
+                sand_box_width as f64 + 10.0,
+                100.0,
+                format!("Sand: {}", grid.debug_info.sand_count),
+            );
+            let water_label = Label::new(
+                sand_box_width as f64 + 10.0,
+                125.0,
+                format!("Water: {}", grid.debug_info.water_count),
+            );
+            let wet_sand_label = Label::new(
+                sand_box_width as f64 + 10.0,
+                150.0,
+                format!("Wet Sand: {}", grid.debug_info.wet_sand_count),
+            );
+            let fire_label = Label::new(
+                sand_box_width as f64 + 10.0,
+                175.0,
+                format!("Fire: {}", grid.debug_info.fire_count),
+            );
+            let smoke_label = Label::new(
+                sand_box_width as f64 + 10.0,
+                200.0,
+                format!("Smoke: {}", grid.debug_info.smoke_count),
+            );
+            let steam_label = Label::new(
+                sand_box_width as f64 + 10.0,
+                225.0,
+                format!("Steam: {}", grid.debug_info.steam_count),
+            );
+            let time_label = Label::new(
+                sand_box_width as f64 + 10.0,
+                250.0,
+                format!("Update: {:?}", grid.debug_info.time_to_update_cells),
+            );
+
+            sand_label.draw(&context, graphics, &mut glyphs);
+            water_label.draw(&context, graphics, &mut glyphs);
+            wet_sand_label.draw(&context, graphics, &mut glyphs);
+            fire_label.draw(&context, graphics, &mut glyphs);
+            smoke_label.draw(&context, graphics, &mut glyphs);
+            steam_label.draw(&context, graphics, &mut glyphs);
+            time_label.draw(&context, graphics, &mut glyphs);
+
+            grid.debug_info.reset();
         });
     }
 }
@@ -185,13 +232,15 @@ fn draw_grid<G: Graphics>(
             let idx = (y * grid.width + x) as usize;
 
             // Don't render if cell is empty
-            if grid.grid[idx].cell_type == 0 {
-                continue;
+            if grid.grid[idx].cell_type != 0 {
+                let color = grid.grid[idx].cell_color;
+                rectangle(color, cell_rect, context.transform, graphics);
             }
 
-            let color = grid.grid[idx].cell_color;
-
-            rectangle(color, cell_rect, context.transform, graphics);
+            if DEBUG {
+                let color: [f32; 4] = [(grid.temperature[idx] / MAX_TEMP) as f32, 0.0, 0.0, 0.9];
+                rectangle(color, cell_rect, context.transform, graphics);
+            }
         }
     }
 

@@ -30,3 +30,9 @@ Note: I don't have any pre built packages but I'm plaining to do that.
 - Glass
 - Smoke
 - Steam
+
+## Planed cell types
+
+- Acid
+- Bombs
+- Snow

@@ -10,6 +10,12 @@ pub const GLASS_CELL: u8 = 6;
 pub const SMOKE_CELL: u8 = 7;
 pub const STEAM_CELL: u8 = 8;
 
+pub const MAX_TEMP: i64 = 10;
+pub const FIRE_TEMP: i64 = 3;
+
+pub const SAND_MELTING: i64 = 1;
+pub const WATER_MELTING: i64 = 2;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Cell {
     pub cell_color: [f32; 4],

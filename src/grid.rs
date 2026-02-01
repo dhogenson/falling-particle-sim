@@ -3,14 +3,64 @@ use rand;
 use rand::seq::SliceRandom;
 use std::{
     io::{self, Write},
-    time::Instant,
+    time::{Duration, Instant},
 };
+
+pub struct DebugInfo {
+    pub sand_count: i64,
+    pub water_count: i64,
+    pub wet_sand_count: i64,
+    pub fire_count: i64,
+    pub smoke_count: i64,
+    pub steam_count: i64,
+    pub time_to_update_cells: Duration,
+}
 
 pub struct Grid {
     pub width: i64,
     pub height: i64,
     pub grid: Vec<Cell>,
     processed: Vec<bool>,
+    pub temperature: Vec<i64>,
+    pub debug_info: DebugInfo,
+}
+
+impl DebugInfo {
+    pub fn new() -> Self {
+        Self {
+            sand_count: 0,
+            water_count: 0,
+            wet_sand_count: 0,
+            fire_count: 0,
+            smoke_count: 0,
+            steam_count: 0,
+            time_to_update_cells: Duration::from_secs(0),
+        }
+    }
+
+    pub fn print_info(&self) {
+        print!(
+            "\rSAND: {}, WATER: {}, WET_SAND: {} FIRE: {} SMOKE: {} STEAM: {} Times since last frame {:?}",
+            self.sand_count,
+            self.water_count,
+            self.wet_sand_count,
+            self.fire_count,
+            self.smoke_count,
+            self.steam_count,
+            self.time_to_update_cells
+        );
+        io::stdout().flush().unwrap();
+    }
+
+    pub fn reset(&mut self) {
+        self.sand_count = 0;
+        self.water_count = 0;
+        self.wet_sand_count = 0;
+        self.fire_count = 0;
+        self.smoke_count = 0;
+        self.steam_count = 0;
+        self.time_to_update_cells = Duration::from_secs(0);
+    }
 }
 
 impl Grid {
@@ -27,6 +77,8 @@ impl Grid {
             height,
             grid: Self::make_grid(width, height),
             processed: vec![false; (width * height) as usize],
+            temperature: vec![0; (width * height) as usize],
+            debug_info: DebugInfo::new(),
         }
     }
 
@@ -89,13 +141,8 @@ impl Grid {
         // Clear processed flags
         self.processed.fill(false);
 
-        // Track all cells
-        let mut sand_count: u32 = 0;
-        let mut water_count: u32 = 0;
-        let mut wet_sand_count: u32 = 0;
-        let mut fire_count: u32 = 0;
-        let mut smoke_count: u32 = 0;
-        let mut steam_count: u32 = 0;
+        // Clear temp
+        self.temperature.fill(0);
 
         for y in 0..self.height {
             for x in 0..self.width {
@@ -107,47 +154,47 @@ impl Grid {
                 match cell_type {
                     SAND_CELL => {
                         self.update_sand(x, y);
-                        sand_count += 1;
+                        self.debug_info.sand_count += 1;
                     }
                     WATER_CELL => {
                         self.update_water(x, y);
-                        water_count += 1;
+                        self.debug_info.water_count += 1;
                     }
                     WET_SAND_CELL => {
                         self.update_wet_sand(x, y);
-                        wet_sand_count += 1;
+                        self.debug_info.wet_sand_count += 1;
                     }
                     FIRE_CELL => {
                         self.update_fire(x, y);
-                        fire_count += 1
+                        self.debug_info.fire_count += 1
                     }
                     SMOKE_CELL => {
                         self.update_smoke(x, y);
-                        smoke_count += 1;
+                        self.debug_info.smoke_count += 1;
                     }
                     STEAM_CELL => {
                         self.update_steam(x, y);
-                        steam_count += 1;
+                        self.debug_info.steam_count += 1;
                     }
                     _ => {}
                 }
             }
         }
         let duration = start.elapsed();
-
-        print!(
-            "\rSAND: {}, WATER: {}, WET_SAND: {} FIRE: {} SMOKE: {} STEAM: {} Times since last frame {:?}",
-            sand_count, water_count, wet_sand_count, fire_count, smoke_count, steam_count, duration
-        );
-        io::stdout().flush().unwrap();
-
-        // println!("{:?}", duration);
+        self.debug_info.time_to_update_cells = duration;
+        // self.debug_info.print_info();
     }
 
     // Rules of sand
     // 1) It first tryes to move down
     // 2) Then diagonally left or right
     pub fn update_sand(&mut self, x: i64, y: i64) {
+        let idx = self.idx(x, y);
+
+        if self.temperature[idx] >= SAND_MELTING {
+            self.grid[idx] = Cell::new_glass();
+            return;
+        }
         let targets = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)];
 
         for (tx, ty) in targets {
@@ -157,6 +204,7 @@ impl Grid {
             let idx = self.idx(tx, ty);
             if self.grid[idx].cell_type == EMPTY_CELL {
                 self.move_particle(x, y, tx, ty);
+
                 return; // We dont want it to make more than one move a tick
             }
         }
@@ -167,7 +215,15 @@ impl Grid {
     // 2) Then it tries to move diagonally to try and move down
     // 3) It will try to move left and right
     pub fn update_water(&mut self, x: i64, y: i64) {
+        let idx = self.idx(x, y);
+
+        if self.temperature[idx] > WATER_MELTING {
+            self.grid[idx] = Cell::new_steam();
+            return;
+        }
+
         let mut rng = rand::rng();
+
         self.water_to_wet_sand(x, y);
 
         // Priority 1: Fall straight down
@@ -285,13 +341,22 @@ impl Grid {
         }
     }
 
+    fn update_temperature(&mut self, x: i64, y: i64, temperature: i64) {
+        let cells: Vec<_> = self.get_square_area(x, y).collect();
+
+        // tx: Target X
+        // ty: Target Y
+        for (tx, ty) in cells {
+            let idx = self.idx(tx, ty);
+            self.temperature[idx] += temperature;
+        }
+    }
+
     // Updates cell based of grass partible rules
     fn update_fire(&mut self, x: i64, y: i64) {
         self.update_life_time(x, y);
-
-        self.fire_to_glass(x, y);
+        self.update_temperature(x, y, FIRE_TEMP);
         self.fire_make_smoke(x, y);
-        self.fire_to_steam(x, y);
 
         let mut targets = [(x, y - 1), (x - 1, y - 1), (x + 1, y - 1)];
         targets.shuffle(&mut rand::rng());
@@ -308,18 +373,6 @@ impl Grid {
         for (tx, ty) in targets {
             if !self.try_move_gass(x, y, tx, ty) {
                 continue;
-            }
-        }
-    }
-
-    // Turns any cells that are sand cells into glass at a givin point
-    fn fire_to_glass(&mut self, x: i64, y: i64) {
-        let cells: Vec<_> = self.get_square_area(x, y).collect();
-
-        for (x, y) in cells {
-            let idx = self.idx(x, y);
-            if self.grid[idx].cell_type == SAND_CELL {
-                self.grid[idx] = Cell::new_glass();
             }
         }
     }
@@ -404,23 +457,6 @@ impl Grid {
         for (tx, ty) in targets {
             if self.try_move_gass(x, y, tx, ty) {
                 return;
-            }
-        }
-    }
-
-    // If theres any water around the giving cords it will turn into steam
-    fn fire_to_steam(&mut self, x: i64, y: i64) {
-        let min_x = (x - 1).max(0);
-        let max_x = (x + 1).min(self.width - 1);
-        let min_y = (y - 1).max(0);
-        let max_y = (y + 1).min(self.height - 1);
-
-        for cy in min_y..=max_y {
-            for cx in min_x..=max_x {
-                let idx = self.idx(cx, cy);
-                if self.grid[idx].cell_type == WATER_CELL {
-                    self.grid[idx] = Cell::new_steam();
-                }
             }
         }
     }
