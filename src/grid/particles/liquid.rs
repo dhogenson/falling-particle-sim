@@ -4,6 +4,11 @@ use rand;
 use rand::seq::SliceRandom;
 
 impl Grid {
+    /*
+     * ===============================
+     * Water code
+     */
+
     // Rules of water
     // 1) Its first goal is to move down, if it can it will if it cant it wont
     // 2) Then it tries to move diagonally to try and move down
@@ -70,5 +75,35 @@ impl Grid {
             return true;
         }
         false
+    }
+
+    /*
+     * ===============================
+     * Acid code
+     */
+
+    pub fn move_acid(&mut self, x: i64, y: i64) {
+        let mut rng = rand::rng();
+
+        // Priority 1: Fall straight down
+        if self.try_move_water(x, y, x, y + 1) {
+            return;
+        }
+
+        // Priority 3: Spread horizontally
+        let mut horizontals = [(x - 1, y), (x + 1, y)];
+        horizontals.shuffle(&mut rng);
+        for (tx, ty) in horizontals {
+            self.try_move_water(x, y, tx, ty);
+            return;
+        }
+
+        // Priority 2: Fall diagonally (randomize left/right)
+        let mut diagonals = [(x - 1, y + 1), (x + 1, y + 1)];
+        diagonals.shuffle(&mut rng);
+        for (tx, ty) in diagonals {
+            self.try_move_water(x, y, tx, ty);
+            return;
+        }
     }
 }

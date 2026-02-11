@@ -10,8 +10,8 @@ use grid::grid::Grid;
 use ui::text::Label;
 
 use piston_window::{
-    graphics::{clear, rectangle, Context, Graphics},
     PistonWindow, WindowSettings,
+    graphics::{Context, Graphics, clear, rectangle},
 };
 
 use piston_window::*;
@@ -67,11 +67,12 @@ fn main() {
             // Handle one time press actions
 
             match key {
-                Key::D5 => selected_element = EMPTY_CELL,
+                Key::D6 => selected_element = EMPTY_CELL,
                 Key::D1 => selected_element = SAND_CELL,
                 Key::D2 => selected_element = STEEL_CELL,
                 Key::D3 => selected_element = WATER_CELL,
                 Key::D4 => selected_element = FIRE_CELL,
+                Key::D5 => selected_element = ACID_CELL,
                 _ => {}
             }
         }
@@ -96,7 +97,7 @@ fn main() {
         if let Some(scroll) = event.mouse_scroll_args() {
             let scroll_y = scroll[1]; // Vertical scroll
             brush_size += scroll_y as i32;
-            brush_size = brush_size.max(1).min(10);
+            brush_size = brush_size.max(1).min(20);
         }
 
         // Place element
@@ -117,7 +118,7 @@ fn main() {
 
         // Draw grid
         window.draw_2d(&event, |context, graphics, _device| {
-            clear(LIGHT_BLUE_COLOR, graphics);
+            clear(BLUE_COLOR, graphics);
             draw_grid(
                 &grid,
                 CELL_SIZE,
@@ -138,6 +139,7 @@ fn main() {
                 STEEL_CELL => "Steel",
                 WATER_CELL => "Water",
                 FIRE_CELL => "Fire",
+                ACID_CELL => "Acid",
                 _ => "<element>",
             };
 
@@ -268,6 +270,7 @@ fn draw_grid<G: Graphics>(
             SMOKE_CELL => SMOKE_COLOR,
             STEAM_CELL => STEAM_COLOR,
             EMPTY_CELL => LIGHT_BLUE_COLOR,
+            ACID_CELL => ACID_COLOR,
             _ => TRANSPAERNT_COLOR,
         };
 

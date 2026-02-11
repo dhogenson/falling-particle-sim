@@ -7,6 +7,7 @@ pub struct DebugInfo {
     pub fire_count: i64,
     pub smoke_count: i64,
     pub steam_count: i64,
+    pub acid_count: i64,
     pub time_to_update_cells: Duration,
 }
 
@@ -19,6 +20,7 @@ impl DebugInfo {
             fire_count: 0,
             smoke_count: 0,
             steam_count: 0,
+            acid_count: 0,
             time_to_update_cells: Duration::from_secs(0),
         }
     }
@@ -30,6 +32,7 @@ impl DebugInfo {
         self.fire_count = 0;
         self.smoke_count = 0;
         self.steam_count = 0;
+        self.acid_count = 0;
         self.time_to_update_cells = Duration::from_secs(0);
     }
 }

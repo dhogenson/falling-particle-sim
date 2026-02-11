@@ -52,6 +52,7 @@ impl Grid {
                 WATER_CELL => Cell::new_water(),
                 FIRE_CELL => Cell::new_fire(),
                 EMPTY_CELL => Cell::new_empty(),
+                ACID_CELL => Cell::new_acid(),
                 _ => Cell::new_empty(),
             };
         }
@@ -99,31 +100,41 @@ impl Grid {
                 if self.processed[idx] {
                     continue;
                 }
+
                 let cell_type = self.grid[idx].cell_type;
+
+                if cell_type == EMPTY_CELL {
+                    continue;
+                }
+
                 match cell_type {
                     SAND_CELL => {
-                        self.update_sand(x, y);
                         self.debug_info.sand_count += 1;
+                        self.update_sand(x, y);
                     }
                     WATER_CELL => {
-                        self.update_water(x, y);
                         self.debug_info.water_count += 1;
+                        self.update_water(x, y);
                     }
                     WET_SAND_CELL => {
-                        self.update_wet_sand(x, y);
                         self.debug_info.wet_sand_count += 1;
+                        self.update_wet_sand(x, y);
                     }
                     FIRE_CELL => {
+                        self.debug_info.fire_count += 1;
                         self.update_fire(x, y);
-                        self.debug_info.fire_count += 1
                     }
                     SMOKE_CELL => {
-                        self.update_smoke(x, y);
                         self.debug_info.smoke_count += 1;
+                        self.update_smoke(x, y);
                     }
                     STEAM_CELL => {
-                        self.update_steam(x, y);
                         self.debug_info.steam_count += 1;
+                        self.update_steam(x, y);
+                    }
+                    ACID_CELL => {
+                        self.debug_info.acid_count += 1;
+                        self.move_acid(x, y);
                     }
                     _ => {}
                 }

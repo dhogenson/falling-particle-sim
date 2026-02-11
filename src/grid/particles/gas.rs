@@ -31,8 +31,8 @@ impl Grid {
 
     // Has a random chance to make smoke at a giving point
     pub(crate) fn fire_make_smoke(&mut self, x: i64, y: i64) {
-        let random_number = rand::random_range(0..100);
-        if random_number > 98 {
+        let random_number = rand::random_range(0..1000);
+        if random_number > 998 {
             let cells: Vec<_> = self.get_square_area(x, y).collect();
 
             if !cells.is_empty() {

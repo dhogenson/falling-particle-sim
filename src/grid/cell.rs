@@ -9,6 +9,7 @@ pub const FIRE_CELL: u8 = 5;
 pub const GLASS_CELL: u8 = 6;
 pub const SMOKE_CELL: u8 = 7;
 pub const STEAM_CELL: u8 = 8;
+pub const ACID_CELL: u8 = 9;
 
 pub const MAX_TEMP: i64 = 10;
 pub const FIRE_TEMP: i64 = 3;
@@ -102,6 +103,15 @@ impl Cell {
             cell_color: random_color(STEAM_COLOR),
             cell_type: STEAM_CELL,
             max_life_time: 600,
+            life_time: 0,
+        }
+    }
+
+    pub fn new_acid() -> Self {
+        Self {
+            cell_color: random_color(ACID_COLOR),
+            cell_type: ACID_CELL,
+            max_life_time: 1000,
             life_time: 0,
         }
     }
