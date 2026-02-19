@@ -206,14 +206,14 @@ mod tests {
 
     #[test]
     fn test_make_grid() {
-        let grid = Grid::new(10, 10);
+        let grid: Grid = Grid::new(10, 10);
         assert_eq!(grid.width, 10);
         assert_eq!(grid.height, 10);
     }
 
     #[test]
     fn test_swap_particle() {
-        let mut grid = Grid::new(10, 10);
+        let mut grid: Grid = Grid::new(10, 10);
         grid.grid[0] = Cell::new_sand();
         grid.grid[1] = Cell::new_glass();
         grid.swap_particle(0, 0, 1, 0);
@@ -224,11 +224,58 @@ mod tests {
 
     #[test]
     fn test_move_particle() {
-        let mut grid = Grid::new(10, 10);
+        let mut grid: Grid = Grid::new(10, 10);
         grid.grid[0] = Cell::new_sand();
         grid.move_particle(0, 0, 1, 1);
 
         assert_eq!(grid.grid[0].cell_type, EMPTY_CELL);
         assert_eq!(grid.grid[11].cell_type, SAND_CELL);
+    }
+
+    #[test]
+    fn test_update_life_time() {
+        let mut grid: Grid = Grid::new(10, 10);
+        grid.grid[0] = Cell::new_fire();
+
+        let cell_max_life_time: u64 = grid.grid[0].max_life_time;
+
+        grid.update_life_time(0, 0);
+        assert_eq!(grid.grid[0].life_time, 1);
+
+        grid.grid[0].life_time = cell_max_life_time - 1;
+        grid.update_life_time(0, 0);
+        assert_eq!(grid.grid[0].cell_type, EMPTY_CELL);
+    }
+
+    #[test]
+    fn test_get_circle_positions() {
+        let grid: Grid = Grid::new(10, 10);
+
+        let cells: Vec<(i32, i32)> = grid.get_circle_positions(3, 3, 1);
+        assert_eq!(cells.len(), 5);
+    }
+
+    #[test]
+    fn test_get_circle_positions_at_edge() {
+        let grid: Grid = Grid::new(10, 10);
+
+        let cells: Vec<(i32, i32)> = grid.get_circle_positions(0, 0, 1);
+        assert_eq!(cells.len(), 3);
+    }
+
+    #[test]
+    fn test_get_square_positions() {
+        let grid: Grid = Grid::new(10, 10);
+
+        let cells: Vec<_> = grid.get_square_area(3, 3).collect();
+        assert_eq!(cells.len(), 9);
+    }
+
+    #[test]
+    fn test_get_square_positions_at_edge() {
+        let grid: Grid = Grid::new(10, 10);
+
+        let cells: Vec<_> = grid.get_square_area(0, 0).collect();
+        assert_eq!(cells.len(), 4);
     }
 }
