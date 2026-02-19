@@ -1,4 +1,4 @@
-use super::cell::*;
+use super::cells::*;
 use std::time::Instant;
 
 use super::debug::DebugInfo;
@@ -32,11 +32,11 @@ impl Grid {
     }
 
     // Returns a grid
-    fn make_grid(size_x: i64, size_y: i64) -> Vec<Cell> {
+    pub(crate) fn make_grid(size_x: i64, size_y: i64) -> Vec<Cell> {
         vec![Cell::new_empty(); (size_x * size_y) as usize]
     }
 
-    // Places a element in a circle based of the cords you want
+    // Places an element in a circle based of the cords you want
     pub fn place_element(&mut self, x: i32, y: i32, selected_element: u8, brush_size: i32) {
         let positions = self.get_circle_positions(x, y, brush_size);
 
@@ -177,8 +177,8 @@ impl Grid {
         self.processed[dst_idx] = true;
     }
 
-    // Updates life time for a cell
-    // If cell has lived the amount of its max life time it dies
+    // Updates lifetime for a cell
+    // If cell has lived the amount of its max lifetime it dies
     pub(crate) fn update_life_time(&mut self, x: i64, y: i64) {
         let idx = self.idx(x, y);
         self.grid[idx].life_time += 1;
@@ -197,5 +197,38 @@ impl Grid {
             let idx = self.idx(tx, ty);
             self.temperature[idx] += temperature;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_make_grid() {
+        let grid = Grid::new(10, 10);
+        assert_eq!(grid.width, 10);
+        assert_eq!(grid.height, 10);
+    }
+
+    #[test]
+    fn test_swap_particle() {
+        let mut grid = Grid::new(10, 10);
+        grid.grid[0] = Cell::new_sand();
+        grid.grid[1] = Cell::new_glass();
+        grid.swap_particle(0, 0, 1, 0);
+
+        assert_eq!(grid.grid[0].cell_type, GLASS_CELL);
+        assert_eq!(grid.grid[1].cell_type, SAND_CELL);
+    }
+
+    #[test]
+    fn test_move_particle() {
+        let mut grid = Grid::new(10, 10);
+        grid.grid[0] = Cell::new_sand();
+        grid.move_particle(0, 0, 1, 1);
+
+        assert_eq!(grid.grid[0].cell_type, EMPTY_CELL);
+        assert_eq!(grid.grid[11].cell_type, SAND_CELL);
     }
 }

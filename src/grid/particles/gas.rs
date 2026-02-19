@@ -1,4 +1,4 @@
-use super::super::cell::*;
+use super::super::cells::*;
 use super::super::grid::Grid;
 use rand;
 use rand::seq::SliceRandom;

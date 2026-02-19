@@ -1,9 +1,9 @@
-use super::super::cell::*;
+use super::super::cells::*;
 use super::super::grid::Grid;
 
 impl Grid {
     // Rules of sand
-    // 1) It first tryes to move down
+    // 1) It first tries to move down
     // 2) Then diagonally left or right
     pub fn update_sand(&mut self, x: i64, y: i64) {
         let idx = self.idx(x, y);
@@ -22,7 +22,7 @@ impl Grid {
             if self.grid[idx].cell_type == EMPTY_CELL {
                 self.move_particle(x, y, tx, ty);
 
-                return; // We dont want it to make more than one move a tick
+                return; // We don't want it to make more than one move a tick
             }
         }
     }

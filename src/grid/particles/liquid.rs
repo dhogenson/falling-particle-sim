@@ -1,4 +1,4 @@
-use super::super::cell::*;
+use super::super::cells::*;
 use super::super::grid::Grid;
 use rand;
 use rand::seq::SliceRandom;
@@ -10,7 +10,7 @@ impl Grid {
      */
 
     // Rules of water
-    // 1) Its first goal is to move down, if it can it will if it cant it wont
+    // 1) Its first goal is to move down, if it can, it will if it cant it won't
     // 2) Then it tries to move diagonally to try and move down
     // 3) It will try to move left and right
     pub fn update_water(&mut self, x: i64, y: i64) {
@@ -63,7 +63,7 @@ impl Grid {
 
     // tx: Target X
     // ty: Target Y
-    // Tryes to move the water with the rules of moving water, if it cant move it will return false
+    // Tries to move the water with the rules of moving water, if it cant move it will return false
     // if it can move it will return true
     pub(crate) fn try_move_water(&mut self, x: i64, y: i64, tx: i64, ty: i64) -> bool {
         if tx < 0 || ty < 0 || tx >= self.width || ty >= self.height {
@@ -86,24 +86,40 @@ impl Grid {
         let mut rng = rand::rng();
 
         // Priority 1: Fall straight down
-        if self.try_move_water(x, y, x, y + 1) {
+        if self.try_move_acid(x, y, x, y + 1) {
             return;
         }
 
-        // Priority 3: Spread horizontally
+        // Priority 2: Spread horizontally
         let mut horizontals = [(x - 1, y), (x + 1, y)];
         horizontals.shuffle(&mut rng);
         for (tx, ty) in horizontals {
-            self.try_move_water(x, y, tx, ty);
+            self.try_move_acid(x, y, tx, ty);
             return;
         }
 
-        // Priority 2: Fall diagonally (randomize left/right)
+        // Priority 3: Fall diagonally (randomize left/right)
         let mut diagonals = [(x - 1, y + 1), (x + 1, y + 1)];
         diagonals.shuffle(&mut rng);
         for (tx, ty) in diagonals {
-            self.try_move_water(x, y, tx, ty);
+            self.try_move_acid(x, y, tx, ty);
             return;
         }
+    }
+
+    pub(crate) fn try_move_acid(&mut self, x: i64, y: i64, tx: i64, ty: i64) -> bool {
+        if tx < 0 || ty < 0 || tx >= self.width || ty >= self.height {
+            return false;
+        }
+
+        let idx = self.idx(tx, ty);
+        if self.grid[idx].cell_type == EMPTY_CELL {
+            self.move_particle(x, y, tx, ty);
+            return true;
+        } else if self.grid[idx].cell_type == WATER_CELL {
+            self.swap_particle(x, y, tx, ty);
+            return true;
+        }
+        false
     }
 }

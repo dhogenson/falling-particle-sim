@@ -5,7 +5,7 @@ mod ui;
 use std::time::{Duration, Instant};
 
 use color::*;
-use grid::cell::*;
+use grid::cells::*;
 use grid::grid::Grid;
 use ui::text::Label;
 
