@@ -157,7 +157,7 @@ impl Grid {
 
     // tx: Target X
     // ty: Target Y
-    // Swaps a particle from position to taget position
+    // Swaps a particle from position to target position
     pub(crate) fn swap_particle(&mut self, x: i64, y: i64, tx: i64, ty: i64) {
         let src_idx = self.idx(x, y);
         let dst_idx = self.idx(tx, ty);

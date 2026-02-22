@@ -2,6 +2,7 @@ mod color;
 mod grid;
 mod ui;
 
+use std::env;
 use std::time::{Duration, Instant};
 
 use color::*;
@@ -52,8 +53,17 @@ fn main() {
     let mut selected_element: u8 = 1;
 
     // Load font
-    let assets = find_folder::Search::ParentsThenKids(3, 3)
-        .for_folder("assets")
+    let exe_path = env::current_exe().unwrap();
+    let assets = exe_path
+        .parent()
+        .map(|p| p.join("assets"))
+        .filter(|p| p.exists())
+        .or_else(|| {
+            env::current_dir()
+                .ok()
+                .map(|p| p.join("assets"))
+                .filter(|p| p.exists())
+        })
         .unwrap();
 
     let texture_settings = TextureSettings::new();

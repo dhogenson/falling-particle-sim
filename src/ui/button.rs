@@ -1,4 +1,4 @@
-use piston_window::graphics::{Context, Graphics, rectangle};
+use piston_window::graphics::{rectangle, Context, Graphics};
 
 #[allow(dead_code)]
 pub struct UIButton {
