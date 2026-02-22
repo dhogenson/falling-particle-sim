@@ -19,7 +19,7 @@ cargo run --release
 
 Then enjoy!
 
-Note: I don't have any pre built packages but I'm plaining to do that.
+Note: I don't have any pre built packages but I'm planning to do that.
 
 ## Current types of cells
 
@@ -30,7 +30,7 @@ Note: I don't have any pre built packages but I'm plaining to do that.
 - Glass
 - Smoke
 - Steam
-- Acid
+- Acid (In the works)
 
 ## Planed cell types
 
